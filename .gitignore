@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables
+.env
+
+# Playwright
+playwright-report/
+test-results/
+
+# Session data
+.auth/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
