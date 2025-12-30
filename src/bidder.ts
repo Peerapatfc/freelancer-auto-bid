@@ -27,6 +27,50 @@ export async function submitBid(
   await page.waitForTimeout(3000);
 
   try {
+    // Check if already bid on this project
+    const alreadyBid = await page.evaluate(() => {
+      // Look for indicators that we already bid
+      const bidIndicators = [
+        '[class*="your-bid"]',
+        '[class*="already-bid"]',
+        '[class*="my-bid"]',
+        '[class*="YourBid"]',
+        '[class*="BidSubmitted"]',
+        'app-your-bid',
+        '.YourBid',
+      ];
+      
+      for (const selector of bidIndicators) {
+        if (document.querySelector(selector)) return true;
+      }
+      
+      // Check for text indicating already bid
+      const pageText = document.body.innerText;
+      if (pageText.includes("You've already bid on this project") ||
+          pageText.includes("Your bid on this project") ||
+          pageText.includes("You have already placed a bid")) {
+        return true;
+      }
+      
+      // Check if bid form is disabled or hidden
+      const bidForm = document.querySelector('#bidAmountInput');
+      if (!bidForm) {
+        // No bid form might mean already bid or project closed
+        const closedIndicators = document.body.innerText;
+        if (closedIndicators.includes("already bid") || 
+            closedIndicators.includes("Your Bid")) {
+          return true;
+        }
+      }
+      
+      return false;
+    });
+
+    if (alreadyBid) {
+      console.log("⏭️  Already bid on this project - skipping");
+      return false;
+    }
+
     // Wait for bid form to load - look for the bid amount input
     await page.waitForSelector('#bidAmountInput', { 
       timeout: 10000 
@@ -155,15 +199,8 @@ export async function submitBid(
       return false;
     }
 
-    // Ask for confirmation before submitting
-    const confirmed = await askConfirmation(
-      `\n⚠️  Submit bid for ${bidData.amount.toLocaleString()} ${bidData.currency || ""} / ${bidData.period} days? (y/n): `
-    );
-
-    if (!confirmed) {
-      console.log("❌ Bid cancelled by user.");
-      return false;
-    }
+    // Auto-submit without confirmation
+    console.log(`\n🚀 Auto-submitting bid: ${bidData.amount.toLocaleString()} ${bidData.currency || ""} / ${bidData.period} days...`);
 
     // Find and click submit button - Freelancer uses specific structure
     const submitButton = await page.$(
