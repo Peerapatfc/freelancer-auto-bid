@@ -4,18 +4,35 @@ node_modules/
 # Build output
 dist/
 
-# Environment variables
+# Environment variables (contains API keys)
 .env
 
 # Playwright
 playwright-report/
 test-results/
 
-# Session data
-.auth/
+# Session data - KEEP for CI (contains login cookies)
+# Remove this line if you want to commit session:
+# .auth/
 
 # OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Logs
 *.log
+npm-debug.log*
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Temporary files
+tmp/
+temp/
+*.tmp
