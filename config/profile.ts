@@ -77,7 +77,7 @@ I work part-time on freelance projects alongside my full-time role, which means 
 
 	// Auto-bid mode settings
 	autoMode: {
-		enabled: false, // Keep disabled until you're comfortable
+		enabled: true, // Keep disabled until you're comfortable
 		interval: 300000, // Check every 5 minutes
 		maxBidsPerDay: 15, // New freelancers should bid more to get noticed
 	},
