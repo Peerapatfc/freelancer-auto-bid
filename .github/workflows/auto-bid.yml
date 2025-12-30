@@ -63,6 +63,8 @@ jobs:
           fi
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FREELANCER_EMAIL: ${{ secrets.FREELANCER_EMAIL }}
+          FREELANCER_PASSWORD: ${{ secrets.FREELANCER_PASSWORD }}
       
       - name: Save Freelancer session
         uses: actions/cache/save@v4

@@ -29,10 +29,10 @@ async function main() {
     // Initialize browser
     await browserManager.init(headless);
 
-    // Check if logged in
+    // Check if logged in, if not attempt login (auto or manual)
     const loggedIn = await browserManager.isLoggedIn();
     if (!loggedIn) {
-      await browserManager.waitForManualLogin();
+      await browserManager.login();
     } else {
       console.log("✅ Already logged in to Freelancer\n");
     }
