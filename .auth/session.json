@@ -45,7 +45,7 @@
       "value": "fb.1.1767026641415.347601232300997881",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1774878260,
+      "expires": 1774880728,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -55,7 +55,7 @@
       "value": "GA1.2.2018060616.1767026642",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1767188660,
+      "expires": 1767191128,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -65,7 +65,7 @@
       "value": "37WlKAyjJdDU6edcx7HYLqr9JUb",
       "domain": ".tiktok.com",
       "path": "/",
-      "expires": 1800798258.050088,
+      "expires": 1800800728.342834,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -95,7 +95,7 @@
       "value": "1",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1800798258,
+      "expires": 1800800728,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -105,7 +105,7 @@
       "value": "01KDNFXJTCDGMGDR8YHJ0M7V2G_.tt.1",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1800798258,
+      "expires": 1800800728,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -145,7 +145,7 @@
       "value": "1efd4e0f-ab31-420b-a6b2-c817967fb5e6",
       "domain": ".linkedin.com",
       "path": "/",
-      "expires": 1774878259.786941,
+      "expires": 1774880728.831792,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -175,7 +175,7 @@
       "value": "\"v=2&9ccee577-4f78-4857-829d-212036bd5184\"",
       "domain": ".linkedin.com",
       "path": "/",
-      "expires": 1798638259.787039,
+      "expires": 1798640728.831812,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -275,7 +275,7 @@
       "value": "eyJpZCI6IjRjNjZhY2JmLTJmZjEtNTI1Ny1hYmVkLTZjNWYyMzA1Nzk4MSIsImNyZWF0ZWQiOjE3NjcwMjY2NjU1MTIsImV4aXN0aW5nIjp0cnVlfQ==",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1798638256,
+      "expires": 1798640728,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -291,21 +291,41 @@
       "sameSite": "Lax"
     },
     {
+      "name": "_hjSession_1223449",
+      "value": "eyJpZCI6ImVhZWNjZTgwLWJkNWQtNDEwYS1hZDcyLWE5MTAzYzVmMWIwZSIsImMiOjE3NjcxMDQxMzgwMzIsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MH0=",
+      "domain": ".freelancer.com",
+      "path": "/",
+      "expires": 1767105938,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
       "name": "dicbo_id",
-      "value": "%7B%22dicbo_fetch%22%3A1767102248133%7D",
+      "value": "%7B%22dicbo_fetch%22%3A1767104698220%7D",
       "domain": "www.freelancer.com",
       "path": "/",
-      "expires": 1767102548,
+      "expires": 1767104998,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
-      "name": "_hjSession_1223449",
-      "value": "eyJpZCI6IjdhNGJmNzFiLTI5NzMtNDUyZS05YTYzLTEyZGM4MzgzNTFhYiIsImMiOjE3NjcxMDIyNDg0NTIsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MH0=",
-      "domain": ".freelancer.com",
+      "name": "AWSALB",
+      "value": "NKhPcFW+Af18D8RQ/FaMTRo13CokOvLasMuwnId+ktdsZgU8FmkwUSymeyCRYEgZNLul1dU7BDBucfjtuSnBokShhj/RiXIdUKNvAARi/osTVXQpfsMm3wU3d2D5",
+      "domain": "notifications.freelancer.com",
       "path": "/",
-      "expires": 1767104048,
+      "expires": 1767709527.997675,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "AWSALBCORS",
+      "value": "NKhPcFW+Af18D8RQ/FaMTRo13CokOvLasMuwnId+ktdsZgU8FmkwUSymeyCRYEgZNLul1dU7BDBucfjtuSnBokShhj/RiXIdUKNvAARi/osTVXQpfsMm3wU3d2D5",
+      "domain": "notifications.freelancer.com",
+      "path": "/",
+      "expires": 1767709527.997797,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -315,7 +335,7 @@
       "value": "1",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1767102309,
+      "expires": 1767104788,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -325,77 +345,37 @@
       "value": "1767026641402.c4c21de1-aa8b-4479-a961-fcb6859366cf",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1774878256,
+      "expires": 1774880728,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Strict"
     },
     {
-      "name": "AWSALB",
-      "value": "RLecSfidvic3TKKMaAgRlhFbntpaNkP+gzq9xO+L8ipFp0jXW8CZHUtaOsg8BL/R40xLE1H/D1mv49A+xCdcW7YS1FxOQqy8Sju0Y9RxFnoopLZwMsypm1qVRT+I",
-      "domain": "notifications.freelancer.com",
-      "path": "/",
-      "expires": 1767707060.13214,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "AWSALBCORS",
-      "value": "RLecSfidvic3TKKMaAgRlhFbntpaNkP+gzq9xO+L8ipFp0jXW8CZHUtaOsg8BL/R40xLE1H/D1mv49A+xCdcW7YS1FxOQqy8Sju0Y9RxFnoopLZwMsypm1qVRT+I",
-      "domain": "notifications.freelancer.com",
-      "path": "/",
-      "expires": 1767707060.132236,
-      "httpOnly": false,
-      "secure": true,
-      "sameSite": "None"
-    },
-    {
       "name": "_ga",
-      "value": "GA1.2.a7409f3d-0bbe-9787-fe32-791433c9795c",
+      "value": "GA1.2.59a12831-65f1-0e83-a99f-d02efe39b824",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1801662260.149003,
+      "expires": 1801664728.587158,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "_ga_31ZQKFK760",
-      "value": "GS2.1.s1767078939$o2$g1$t1767102260$j49$l0$h0",
+      "value": "GS2.1.s1767078939$o2$g1$t1767104728$j58$l0$h0",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1801662260.157127,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "ttcsid_CQ154HJC77U1C0R52830",
-      "value": "1767102248978::NH77iuXtD4xXk5Wpnq3S.5.1767102260159.1",
-      "domain": ".freelancer.com",
-      "path": "/",
-      "expires": 1800798260,
+      "expires": 1801664728.589956,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "ttcsid_CT6G92RC77U1LMCPR03G",
-      "value": "1767102248979::ihLxX4SA1KSkasrfyps1.5.1767102260160.1",
+      "value": "1767102248979::ihLxX4SA1KSkasrfyps1.5.1767104728592.1",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1800798260,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "ttcsid",
-      "value": "1767102248978::U6WSmXlE93Fbl_7fJ1Pb.5.1767102260160.0",
-      "domain": ".freelancer.com",
-      "path": "/",
-      "expires": 1800798260,
+      "expires": 1800800728,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -405,7 +385,7 @@
       "value": "9455bf90e4d511f099df554cc7e1ba55",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1767188660,
+      "expires": 1767191128,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -415,7 +395,27 @@
       "value": "94559990e4d511f0952c79f1fd1ce44f",
       "domain": ".freelancer.com",
       "path": "/",
-      "expires": 1800798260,
+      "expires": 1800800728,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "ttcsid",
+      "value": "1767102248978::U6WSmXlE93Fbl_7fJ1Pb.5.1767104728806.0",
+      "domain": ".freelancer.com",
+      "path": "/",
+      "expires": 1800800728,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "ttcsid_CQ154HJC77U1C0R52830",
+      "value": "1767102248978::NH77iuXtD4xXk5Wpnq3S.5.1767104728806.1",
+      "domain": ".freelancer.com",
+      "path": "/",
+      "expires": 1800800728,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -427,15 +427,15 @@
       "localStorage": [
         {
           "name": "abTestVariations",
-          "value": "{\"id-7102117\":{\"timeUpdated\":1767102256733,\"timeCreated\":1767026665830,\"item\":{\"WEBAPP_ABTEST_CACHE_V2|2|T315009-menu-redesign|7102117\":{\"variation\":\"control\",\"expiry\":1767109447769}}}}"
+          "value": "{\"id-7102117\":{\"timeUpdated\":1767104728134,\"timeCreated\":1767026665830,\"item\":{\"WEBAPP_ABTEST_CACHE_V2|2|T315009-menu-redesign|7102117\":{\"variation\":\"control\",\"expiry\":1767109447769},\"WEBAPP_ABTEST_CACHE_V2|2|T321128-pvp-redesign|7102117\":{\"variation\":\"control\",\"expiry\":1767111358728}}}}"
         },
         {
           "name": "_uetvid_exp",
-          "value": "Sun, 24 Jan 2027 13:44:20 GMT"
+          "value": "Sun, 24 Jan 2027 14:25:28 GMT"
         },
         {
           "name": "topicsLastReferenceTime",
-          "value": "1767102260159"
+          "value": "1767104728591"
         },
         {
           "name": "notificationsInternalGranted",
@@ -471,11 +471,11 @@
         },
         {
           "name": "lastExternalReferrerTime",
-          "value": "1767102256956"
+          "value": "1767104728054"
         },
         {
           "name": "viewedItems",
-          "value": "{\"id-7102117\":{\"timeUpdated\":1767084022892,\"timeCreated\":1767027518865,\"item\":{\"project\":{\"40100443\":1767083949070,\"40104211\":1767028558134,\"40104256\":1767027518865,\"40104295\":1767028652626,\"40104297\":1767028700292,\"40104305\":1767028684647,\"40104306\":1767028668818,\"40104312\":1767028621339,\"40104315\":1767028636261,\"40104323\":1767028605577,\"40104324\":1767028589720,\"40104330\":1767028573971,\"40104722\":1767082857954,\"40105603\":1767081742595,\"40105647\":1767081727463,\"40105658\":1767082787941,\"40105688\":1767084022892,\"40105706\":1767079104099,\"40105716\":1767083930047,\"40105722\":1767084003925,\"40105725\":1767083912206,\"40105733\":1767079038858,\"40105736\":1767079023398,\"40105741\":1767079398467,\"40105761\":1767078993309,\"40105763\":1767079302169,\"40105768\":1767079370801,\"40105771\":1767083878144,\"40105780\":1767083984849,\"40105853\":1767083740042,\"40105879\":1767083967751,\"40105940\":1767083894488}}}}"
+          "value": "{\"id-7102117\":{\"timeUpdated\":1767104728282,\"timeCreated\":1767027518865,\"item\":{\"project\":{\"40100443\":1767104684327,\"40104211\":1767028558134,\"40104256\":1767027518865,\"40104295\":1767028652626,\"40104297\":1767028700292,\"40104305\":1767028684647,\"40104306\":1767028668818,\"40104312\":1767028621339,\"40104315\":1767028636261,\"40104323\":1767028605577,\"40104324\":1767028589720,\"40104330\":1767028573971,\"40104722\":1767082857954,\"40105603\":1767081742595,\"40105647\":1767081727463,\"40105658\":1767082787941,\"40105688\":1767084022892,\"40105706\":1767079104099,\"40105716\":1767083930047,\"40105722\":1767084003925,\"40105725\":1767083912206,\"40105733\":1767079038858,\"40105736\":1767079023398,\"40105741\":1767079398467,\"40105761\":1767078993309,\"40105763\":1767079302169,\"40105768\":1767079370801,\"40105771\":1767083878144,\"40105780\":1767083984849,\"40105853\":1767083740042,\"40105879\":1767104699298,\"40105940\":1767083894488,\"40105984\":1767104728282,\"40106095\":1767104713491}}}}"
         },
         {
           "name": "_hjUserAttributes",
@@ -483,7 +483,7 @@
         },
         {
           "name": "_uetsid_exp",
-          "value": "Wed, 31 Dec 2025 13:44:20 GMT"
+          "value": "Wed, 31 Dec 2025 14:25:28 GMT"
         },
         {
           "name": "_uetvid",
@@ -503,7 +503,7 @@
         },
         {
           "name": "soundsMasterTabId",
-          "value": "1767102258060.5"
+          "value": "1767104729990.2"
         },
         {
           "name": "trackingBacklog",

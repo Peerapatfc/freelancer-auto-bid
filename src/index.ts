@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { browserManager } from "./browser.js";
 import { scrapeProjects, enrichProjectsWithDetails, getRemainingBids, getBidInsights, analyzeCompetition } from "./scraper.js";
-import { recommendProjects, filterByScore } from "./ai/recommender.js";
+import { recommendProjects, filterByScore, suggestBidEdit } from "./ai/recommender.js";
 import { generateProposal, generateTemplateProposal } from "./ai/proposal.js";
 import { submitBid, editBid } from "./bidder.js";
 import { profile, searchUrl } from "../config/profile.js";
@@ -38,9 +38,9 @@ async function main() {
       console.log("✅ Already logged in to Freelancer\n");
     }
 
-    // Check remaining bids
+    // Check remaining bids (skip for --improve-bids since editing doesn't use new bids)
     const bidStatus = await getRemainingBids();
-    if (bidStatus.remaining === 0) {
+    if (bidStatus.remaining === 0 && !improveBidsMode) {
       console.log("\n❌ No bids remaining!");
       console.log("   Free members get 6 bids, which replenish over time.");
       if (bidStatus.replenishTime) {
@@ -50,7 +50,9 @@ async function main() {
       return;
     }
     
-    console.log(`\n✅ You have ${bidStatus.remaining} bids available`);
+    if (!improveBidsMode) {
+      console.log(`\n✅ You have ${bidStatus.remaining} bids available`);
+    }
 
     // Fetch current bid performance
     const existingBids = await getBidInsights();
@@ -85,24 +87,67 @@ async function main() {
         console.log(`   Position: #${bid.bidRank}/${bid.totalBids} (${positionPercent}%)`);
         console.log(`   Current bid: ${bid.yourBid} ${bid.yourBidCurrency}`);
         
-        // Calculate reduced bid (10% less)
-        const reducedBid = Math.round(bid.yourBid * 0.9);
-        console.log(`   Suggested new bid: ${reducedBid} ${bid.yourBidCurrency} (-10%)`);
+        // Get AI-powered bid suggestion
+        console.log("   🤖 Analyzing with AI...");
+        const suggestion = await suggestBidEdit(
+          bid.projectTitle,
+          bid.yourBid,
+          bid.yourBidCurrency,
+          bid.bidRank,
+          bid.totalBids,
+          bid.timeRemaining
+        );
         
-        // Edit the bid
-        const success = await editBid(bid.projectUrl, reducedBid, undefined, dryRun);
+        const strategyIcon = suggestion.strategy === "aggressive" ? "🔥" : 
+                            suggestion.strategy === "moderate" ? "📊" : "🛡️";
+        const changePercent = Math.round((1 - suggestion.suggestedAmount / bid.yourBid) * 100);
+        
+        console.log(`   ${strategyIcon} Strategy: ${suggestion.strategy.toUpperCase()}`);
+        console.log(`   💡 Suggested: ${suggestion.suggestedAmount} ${suggestion.currency} (-${changePercent}%)`);
+        console.log(`   📝 Reason: ${suggestion.reason}`);
+        
+        // Edit the bid (pass original amount for milestone adjustment)
+        const success = await editBid(bid.projectUrl, suggestion.suggestedAmount, undefined, dryRun, bid.yourBid);
         
         if (success) {
-          console.log(`   ✅ Bid updated!\n`);
+          console.log("   ✅ Bid updated!\n");
         } else {
-          console.log(`   ⚠️ Could not update bid\n`);
+          console.log("   ⚠️ Could not update bid\n");
         }
         
-        // Delay between edits
+        // Delay between edits (and API calls)
         await new Promise(r => setTimeout(r, 2000));
       }
 
       console.log("\n✨ Bid improvement complete!");
+      
+      // Recheck rankings after editing (only if not dry run)
+      if (!dryRun) {
+        console.log("\n📊 Rechecking bid rankings...\n");
+        await new Promise(r => setTimeout(r, 2000));
+        
+        const updatedBids = await getBidInsights();
+        const updatedCompetition = analyzeCompetition(updatedBids);
+        
+        console.log(`📈 Updated Performance: avg rank #${updatedCompetition.avgRank}, avg competition ${updatedCompetition.avgTotalBids} bids`);
+        
+        // Compare before/after for edited bids
+        console.log("\n📊 Ranking changes:");
+        for (const oldBid of poorBids) {
+          const newBid = updatedBids.find(b => b.projectUrl === oldBid.projectUrl);
+          if (newBid) {
+            const oldPct = Math.round((oldBid.bidRank / oldBid.totalBids) * 100);
+            const newPct = Math.round((newBid.bidRank / newBid.totalBids) * 100);
+            const improved = newPct < oldPct;
+            const icon = improved ? "📈" : (newPct === oldPct ? "➡️" : "📉");
+            console.log(`   ${icon} ${oldBid.projectTitle.substring(0, 30)}...`);
+            console.log(`      #${oldBid.bidRank}/${oldBid.totalBids} (${oldPct}%) → #${newBid.bidRank}/${newBid.totalBids} (${newPct}%)`);
+          }
+        }
+      } else {
+        console.log("\n💡 Run without --dry-run to actually edit bids and see ranking changes.");
+      }
+      
       return;
     }
 

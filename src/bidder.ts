@@ -252,12 +252,14 @@ async function askConfirmation(question: string): Promise<boolean> {
  * Edit an existing bid to improve ranking
  * - Can lower bid amount
  * - Can update proposal text
+ * - Automatically adjusts milestone payments proportionally
  */
 export async function editBid(
   projectUrl: string,
   newAmount?: number,
   newProposal?: string,
-  dryRun = false
+  dryRun = false,
+  originalAmount?: number  // Original amount to calculate adjustment ratio
 ): Promise<boolean> {
   const page = browserManager.getPage();
 
@@ -288,9 +290,15 @@ export async function editBid(
       }
     }
 
+    // Calculate adjustment ratio for milestones
+    const adjustmentRatio = (originalAmount && newAmount) ? newAmount / originalAmount : 1;
+
     if (dryRun) {
       console.log("   🔄 [DRY RUN] Would click Edit button");
       if (newAmount) console.log(`   🔄 [DRY RUN] Would change amount to: ${newAmount}`);
+      if (adjustmentRatio < 1) {
+        console.log(`   🔄 [DRY RUN] Would adjust milestones by ${Math.round((1 - adjustmentRatio) * 100)}%`);
+      }
       if (newProposal) console.log("   🔄 [DRY RUN] Would update proposal");
       return true;
     }
@@ -311,6 +319,27 @@ export async function editBid(
         await amountInput.click({ clickCount: 3 }); // Select all
         await amountInput.fill(newAmount.toString());
         console.log(`   ✓ Updated amount to: ${newAmount}`);
+      }
+    }
+
+    // Adjust milestone payments proportionally if bid is being reduced
+    if (adjustmentRatio < 1) {
+      const milestoneInputs = await page.$$('input[id*="milestone"], input[name*="milestone"], .MilestoneAmount input');
+      
+      if (milestoneInputs.length > 0) {
+        console.log(`   📋 Adjusting ${milestoneInputs.length} milestone(s)...`);
+        
+        for (const milestoneInput of milestoneInputs) {
+          const currentValue = await milestoneInput.inputValue();
+          const numericValue = Number.parseFloat(currentValue.replace(/[^0-9.]/g, ''));
+          
+          if (!Number.isNaN(numericValue) && numericValue > 0) {
+            const newValue = Math.round(numericValue * adjustmentRatio);
+            await milestoneInput.click({ clickCount: 3 });
+            await milestoneInput.fill(newValue.toString());
+          }
+        }
+        console.log(`   ✓ Milestones adjusted by ${Math.round((1 - adjustmentRatio) * 100)}%`);
       }
     }
 

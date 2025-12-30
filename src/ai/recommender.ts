@@ -280,3 +280,89 @@ Respond in JSON format ONLY:
 export function filterByScore(scores: ProjectScore[], minScore: number): ProjectScore[] {
   return scores.filter((s) => s.score >= minScore);
 }
+
+/**
+ * AI-powered bid edit suggestion
+ * Analyzes competition and suggests optimal bid amount
+ */
+export interface BidEditSuggestion {
+  originalAmount: number;
+  suggestedAmount: number;
+  currency: string;
+  reason: string;
+  strategy: "aggressive" | "moderate" | "conservative";
+}
+
+export async function suggestBidEdit(
+  projectTitle: string,
+  currentBid: number,
+  currency: string,
+  bidRank: number,
+  totalBids: number,
+  timeRemaining: string
+): Promise<BidEditSuggestion> {
+  // Calculate position percentage
+  const positionPercent = totalBids > 0 ? (bidRank / totalBids) * 100 : 100;
+  
+  // If no API key, use simple fallback
+  if (!process.env.GEMINI_API_KEY) {
+    const reduction = positionPercent > 75 ? 0.15 : positionPercent > 50 ? 0.10 : 0.05;
+    return {
+      originalAmount: currentBid,
+      suggestedAmount: Math.round(currentBid * (1 - reduction)),
+      currency,
+      reason: `Position ${Math.round(positionPercent)}% - ${reduction * 100}% reduction`,
+      strategy: reduction >= 0.15 ? "aggressive" : reduction >= 0.10 ? "moderate" : "conservative",
+    };
+  }
+
+  const prompt = `You are a Freelancer.com bidding strategist. Analyze this bid and suggest an edit.
+
+PROJECT: ${projectTitle}
+CURRENT BID: ${currentBid} ${currency}
+YOUR RANK: #${bidRank} out of ${totalBids} bids (${Math.round(positionPercent)}% position - lower is better)
+TIME REMAINING: ${timeRemaining}
+
+Consider:
+1. Very poor position (>75%): Aggressive reduction (15-20%) or strategic repositioning
+2. Poor position (50-75%): Moderate reduction (10-15%)  
+3. OK position (25-50%): Small reduction (5-10%) or hold
+4. Good position (<25%): Don't reduce much, maintain competitiveness
+
+Respond ONLY with JSON (no markdown):
+{
+  "suggestedAmount": <number>,
+  "reason": "<brief 1-line explanation>",
+  "strategy": "aggressive" | "moderate" | "conservative"
+}`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        originalAmount: currentBid,
+        suggestedAmount: Math.round(parsed.suggestedAmount),
+        currency,
+        reason: parsed.reason || "AI suggestion",
+        strategy: parsed.strategy || "moderate",
+      };
+    }
+  } catch (error) {
+    console.log("   ⚠️ AI suggestion failed, using fallback");
+  }
+
+  // Fallback: simple percentage reduction
+  const reduction = positionPercent > 75 ? 0.15 : positionPercent > 50 ? 0.10 : 0.05;
+  return {
+    originalAmount: currentBid,
+    suggestedAmount: Math.round(currentBid * (1 - reduction)),
+    currency,
+    reason: `Fallback: ${Math.round(reduction * 100)}% reduction based on position`,
+    strategy: reduction >= 0.15 ? "aggressive" : reduction >= 0.10 ? "moderate" : "conservative",
+  };
+}
