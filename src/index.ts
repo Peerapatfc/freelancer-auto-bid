@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { browserManager } from "./browser.js";
-import { scrapeProjects, enrichProjectsWithDetails } from "./scraper.js";
+import { scrapeProjects, enrichProjectsWithDetails, getRemainingBids } from "./scraper.js";
 import { recommendProjects, filterByScore } from "./ai/recommender.js";
 import { generateProposal, generateTemplateProposal } from "./ai/proposal.js";
 import { submitBid } from "./bidder.js";
@@ -37,6 +37,20 @@ async function main() {
       console.log("✅ Already logged in to Freelancer\n");
     }
 
+    // Check remaining bids
+    const bidStatus = await getRemainingBids();
+    if (bidStatus.remaining === 0) {
+      console.log("\n❌ No bids remaining!");
+      console.log("   Free members get 6 bids, which replenish over time.");
+      if (bidStatus.replenishTime) {
+        console.log(`   ⏰ Next bid in: ${bidStatus.replenishTime}`);
+      }
+      console.log("   💡 Upgrade membership or wait for bid replenishment.\n");
+      return;
+    }
+    
+    console.log(`\n✅ You have ${bidStatus.remaining} bids available\n`);
+
     // Scrape projects from search page
     let projects = await scrapeProjects(searchUrl, maxProjects);
 
@@ -62,10 +76,18 @@ async function main() {
       return;
     }
 
-    console.log(`\n🎯 ${recommended.length} projects recommended for bidding:\n`);
+    // Limit to available bids (precious bids go to top-scoring projects)
+    const projectsToBid = recommended.slice(0, bidStatus.remaining);
+    
+    if (projectsToBid.length < recommended.length) {
+      console.log(`\n⚠️  You have ${bidStatus.remaining} bids, but ${recommended.length} projects match.`);
+      console.log(`   Bidding on top ${projectsToBid.length} highest-scoring projects only.\n`);
+    }
 
-    // Process each recommended project
-    for (const rec of recommended) {
+    console.log(`\n🎯 ${projectsToBid.length} projects selected for bidding:\n`);
+
+    // Process each selected project
+    for (const rec of projectsToBid) {
       console.log("═".repeat(60));
       console.log(`📌 ${rec.project.title}`);
       

@@ -523,5 +523,71 @@ export async function hasExistingBid(projectUrl: string): Promise<boolean> {
   return alreadyBid;
 }
 
+/**
+ * Get remaining bids from dashboard
+ * Returns { remaining: number, total: number, replenishTime: string | null }
+ */
+export async function getRemainingBids(): Promise<{
+  remaining: number;
+  total: number;
+  replenishTime: string | null;
+}> {
+  const page = browserManager.getPage();
+  
+  console.log("📊 Checking remaining bids...");
+  
+  await page.goto("https://www.freelancer.com/dashboard", { 
+    waitUntil: "networkidle", 
+    timeout: 60000 
+  });
+  await page.waitForTimeout(2000);
+
+  const bidInfo = await page.evaluate(() => {
+    // Look for "X bids left out of Y" text
+    const pageText = document.body.innerText;
+    
+    // Pattern: "0 bids left out of 6"
+    const bidMatch = pageText.match(/(\d+)\s*bids?\s*left\s*out\s*of\s*(\d+)/i);
+    
+    if (bidMatch) {
+      return {
+        remaining: parseInt(bidMatch[1]),
+        total: parseInt(bidMatch[2]),
+      };
+    }
+    
+    // Fallback: look for bid count element
+    const bidEl = document.querySelector('[class*="bids-left"], [class*="BidCount"]');
+    if (bidEl) {
+      const text = bidEl.textContent || "";
+      const match = text.match(/(\d+)/);
+      if (match) {
+        return { remaining: parseInt(match[1]), total: 6 };
+      }
+    }
+    
+    return { remaining: -1, total: -1 }; // Unknown
+  });
+
+  // Check for replenish time (e.g., "4 days, 22 hours until next additional bid")
+  const replenishTime = await page.evaluate(() => {
+    const pageText = document.body.innerText;
+    const replenishMatch = pageText.match(/([\d]+\s*days?,?\s*[\d]+\s*hours?)\s*until\s*next/i);
+    return replenishMatch ? replenishMatch[1] : null;
+  });
+
+  if (bidInfo.remaining >= 0) {
+    console.log(`   📋 Bids: ${bidInfo.remaining} / ${bidInfo.total} remaining`);
+    if (replenishTime) {
+      console.log(`   ⏰ Next bid replenishes in: ${replenishTime}`);
+    }
+  } else {
+    console.log("   ⚠️ Could not determine bid count");
+  }
+
+  return { ...bidInfo, replenishTime };
+}
+
 // Export for use in other modules
 export { convertToUSD, USD_EXCHANGE_RATES, parseCurrencyAmount };
+

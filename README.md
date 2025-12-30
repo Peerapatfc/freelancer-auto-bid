@@ -4,13 +4,13 @@ Automate your Freelancer.com bidding with AI-powered project recommendations and
 
 ## Features
 
-- 🔍 **Project Scraping**: Scrape 2 pages (40 projects) matching your keywords
+- 🔍 **Project Scraping**: Scrape 2 pages (40 projects) with pagination support
 - 🤖 **AI Recommendations**: Score projects based on skill match, budget, competition
 - ✍️ **AI Proposals**: Generate personalized proposals using Google Gemini
 - 💰 **Smart Milestones**: AI-generated milestone payment suggestions
-- 🎯 **Smart Bidding**: Fill and submit bids via Playwright browser automation
-- 🔐 **Session Persistence**: Login once, session saved for future runs
-- 🛡️ **Safety Features**: Dry-run mode, confirmation prompts
+- 🎯 **Smart Bidding**: Auto-fill bid forms with correct currency
+- � **Bid Limit Check**: Monitors remaining bids (Free: 6 bids)
+- � **Auto-Login**: Login with email/password or saved session
 - ⏰ **GitHub Actions**: Run daily via cron schedule
 
 ## Quick Start
@@ -34,10 +34,14 @@ Edit `config/profile.ts` with your:
 
 ```bash
 cp .env.example .env
-# Edit .env with your Gemini API key
 ```
 
-Get your Gemini API key from: https://aistudio.google.com/app/apikey
+Edit `.env`:
+```env
+GEMINI_API_KEY=your_gemini_key_here
+FREELANCER_EMAIL=your_email@example.com
+FREELANCER_PASSWORD=your_password
+```
 
 ### 4. Run Dry Mode (Recommended First)
 
@@ -45,19 +49,11 @@ Get your Gemini API key from: https://aistudio.google.com/app/apikey
 npm start -- --dry-run
 ```
 
-This will:
-- Open browser and prompt for Freelancer login
-- Scrape 40 projects (2 pages)
-- Show AI recommendations and generated proposals
-- **NOT** submit any bids
-
 ### 5. Run Live Mode
 
 ```bash
 npm start
 ```
-
-Each bid requires manual confirmation before submitting.
 
 ## Command Line Options
 
@@ -69,52 +65,54 @@ Each bid requires manual confirmation before submitting.
 | `--template` | Use template proposals instead of AI |
 | `--skip-details` | Skip fetching detailed project info |
 
-## GitHub Actions (Daily Cron)
+## Bid Limit Management
 
-The script can run automatically via GitHub Actions.
+Free members have **6 bids** that replenish over time (~1 bid per 5 days).
+
+The script automatically:
+1. ✅ Checks remaining bids before starting
+2. ❌ Stops if 0 bids remaining
+3. 🎯 Prioritizes top-scoring projects when bids are limited
+
+```
+📊 Checking remaining bids...
+   📋 Bids: 2 / 6 remaining
+
+⚠️  You have 2 bids, but 8 projects match.
+   Bidding on top 2 highest-scoring projects only.
+```
+
+## GitHub Actions (Daily Cron)
 
 ### Setup
 
-1. **Push to GitHub:**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-   git push -u origin main
-   ```
+1. **Push to GitHub**
+2. **Add Secrets** (Settings → Secrets → Actions):
+   - `GEMINI_API_KEY`
+   - `FREELANCER_EMAIL`
+   - `FREELANCER_PASSWORD`
 
-2. **Add Secrets** (GitHub → Settings → Secrets → Actions):
-   - `GEMINI_API_KEY`: Your Google Gemini API key
-
-3. **First-time Login:**
-   - Run locally once with `npm start -- --dry-run` to create session
-   - The `.auth/` folder contains your login session
-   - You may need to periodically refresh the session locally
-
-4. **Schedule:**
-   - Runs daily at **9:00 AM Thailand time** (2:00 AM UTC)
-   - Can be triggered manually from Actions tab
+3. **Schedule**: Runs daily at **9:00 AM Thailand time** (2:00 AM UTC)
 
 ### ⚠️ Important Notes
 
-- **Session Expiry**: Freelancer sessions expire. You may need to re-login locally and update the session.
-- **Dry Run by Default**: The cron job runs in `--dry-run` mode. Set `dry_run: false` for live bids.
-- **Review Before Live**: Always check the logs before enabling live bidding.
+- Cron runs in **dry-run mode** by default
+- Sessions may expire - re-login locally if needed
+- CAPTCHA/2FA requires manual intervention
 
 ## How It Works
 
 ```
 ┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
-│  Scrape Projects │ ──▶ │  AI Recommender  │ ──▶ │  AI Proposals   │
-│  (2 pages)       │      │  (Score 0-100)   │      │  (Gemini)       │
+│  Check Bids     │ ──▶ │  Scrape Projects │ ──▶ │  AI Recommender │
+│  (0/6 = stop)   │      │  (2 pages)       │      │  (Score 0-100)  │
 └─────────────────┘      └──────────────────┘      └─────────────────┘
                                                             │
                                                             ▼
-                                                   ┌─────────────────┐
-                                                   │  Fill Bid Form  │
-                                                   │  + Milestones   │
-                                                   └─────────────────┘
+┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
+│  Submit Bid     │ ◀── │  Fill Form +     │ ◀── │  AI Proposals   │
+│  (if not dup)   │      │  Milestones      │      │  (Gemini)       │
+└─────────────────┘      └──────────────────┘      └─────────────────┘
 ```
 
 ## Configuration
@@ -123,45 +121,41 @@ The script can run automatically via GitHub Actions.
 
 ```typescript
 bidSettings: {
-  minBudget: 50,       // Minimum project budget (USD)
-  maxBudget: 2000,     // Maximum project budget (USD)
-  minScore: 65,        // Only bid on 65+ match score
-  deliveryDays: 14,    // Default delivery period (realistic for part-time)
+  minBudget: 50,       // Minimum project budget
+  maxBudget: 2000,     // Maximum project budget
+  minScore: 65,        // Minimum AI score to bid
+  deliveryDays: 14,    // Default delivery period
 }
 ```
 
 ### Search URL
 
-The script uses keyword-based search:
-```
-https://www.freelancer.com/search/projects?q=magento%20wordpress%20woocommerce
+```typescript
+export const searchUrl = "https://www.freelancer.com/search/projects?q=magento%20wordpress%20woocommerce";
 ```
 
-## Safety
+## Safety Features
 
-- **Dry Run**: Always test with `--dry-run` first
-- **Confirmation**: Each bid requires manual Y/N confirmation (when not headless)
-- **Screenshots**: Bid form previews saved before submission
-- **Session**: Cookies stored locally, no password stored
+- ✅ **Bid Limit Check**: Won't try to bid if 0 bids remaining
+- ✅ **Duplicate Check**: Skips projects you've already bid on
+- ✅ **Dry Run**: Test with `--dry-run` before live
+- ✅ **Screenshots**: Bid form previews saved before submission
+- ✅ **Session Persistence**: No password stored in code
 
 ## Troubleshooting
 
-**"No projects found"**
-- Check your search URL is valid
-- Verify you're logged in to Freelancer
+**"No bids remaining"**
+- Wait for bid replenishment (~5 days per bid)
+- Upgrade membership for more bids
 
-**"Could not find bid button"**
-- You may have already bid on this project
-- The project may be closed
-
-**"Gemini API error"**
-- Check your API key in `.env`
-- Use `--template` flag as fallback
-- Check rate limits (429 errors are auto-retried)
+**"Already bid on this project"**
+- Script automatically skips duplicates
 
 **"Session expired"**
 - Run locally with `npm start -- --dry-run` to re-login
-- Re-upload the `.auth/` folder if using CI
+
+**"CAPTCHA detected"**
+- Login manually, auto-login doesn't bypass CAPTCHA
 
 ## License
 
