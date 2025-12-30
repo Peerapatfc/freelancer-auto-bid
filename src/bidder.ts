@@ -322,24 +322,56 @@ export async function editBid(
       }
     }
 
-    // Adjust milestone payments proportionally if bid is being reduced
-    if (adjustmentRatio < 1) {
-      const milestoneInputs = await page.$$('input[id*="milestone"], input[name*="milestone"], .MilestoneAmount input');
+    // Handle milestones: update existing milestone amounts to match new bid
+    // Instead of deleting/creating, just update the values proportionally
+    if (newAmount && originalAmount && originalAmount > 0) {
+      const adjustmentRatio = newAmount / originalAmount;
       
-      if (milestoneInputs.length > 0) {
-        console.log(`   📋 Adjusting ${milestoneInputs.length} milestone(s)...`);
+      // Find all existing milestone amount inputs
+      const milestoneAmountInputs = await page.$$('.MilestoneRequest input[aria-label="Milestone request amount"], input[type="number"][inputmode="decimal"]');
+      
+      if (milestoneAmountInputs.length > 0) {
+        console.log(`   📋 Updating ${milestoneAmountInputs.length} milestone(s) proportionally...`);
         
-        for (const milestoneInput of milestoneInputs) {
-          const currentValue = await milestoneInput.inputValue();
+        let totalNewMilestones = 0;
+        const newValues: number[] = [];
+        
+        for (let i = 0; i < milestoneAmountInputs.length; i++) {
+          const input = milestoneAmountInputs[i];
+          const currentValue = await input.inputValue();
           const numericValue = Number.parseFloat(currentValue.replace(/[^0-9.]/g, ''));
           
           if (!Number.isNaN(numericValue) && numericValue > 0) {
-            const newValue = Math.round(numericValue * adjustmentRatio);
-            await milestoneInput.click({ clickCount: 3 });
-            await milestoneInput.fill(newValue.toString());
+            // Calculate new value proportionally, ensure minimum 1
+            let newValue = Math.round(numericValue * adjustmentRatio);
+            if (newValue < 1) newValue = 1;
+            
+            // Update the input
+            await input.click({ clickCount: 3 });
+            await input.fill(newValue.toString());
+            await page.waitForTimeout(200);
+            
+            newValues.push(newValue);
+            totalNewMilestones += newValue;
           }
         }
-        console.log(`   ✓ Milestones adjusted by ${Math.round((1 - adjustmentRatio) * 100)}%`);
+        
+        // If total doesn't match new bid amount, adjust the last milestone
+        if (newValues.length > 0 && totalNewMilestones !== newAmount) {
+          const diff = newAmount - totalNewMilestones;
+          const lastInput = milestoneAmountInputs[milestoneAmountInputs.length - 1];
+          const lastValue = newValues[newValues.length - 1] + diff;
+          if (lastValue >= 1) {
+            await lastInput.click({ clickCount: 3 });
+            await lastInput.fill(lastValue.toString());
+            newValues[newValues.length - 1] = lastValue;
+            totalNewMilestones = newAmount;
+          }
+        }
+        
+        console.log(`   ✓ Milestones updated: ${newValues.join(' + ')} = ${totalNewMilestones}`);
+      } else {
+        console.log("   ℹ️ No milestones to update");
       }
     }
 
@@ -354,12 +386,30 @@ export async function editBid(
       }
     }
 
+    // Capture screenshot before saving for debugging
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const projectSlug = projectUrl.split('/projects/')[1]?.split('/')[1] || 'unknown';
+    const screenshotPath = `.auth/bid_edit_${projectSlug}_${timestamp}.png`;
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+    console.log(`   📸 Screenshot saved: ${screenshotPath}`);
+
     // Look for Save/Update button
     const saveButton = await page.$('button:has-text("Save"), button:has-text("Update"), fl-button:has-text("Save")');
     
     if (saveButton) {
       await saveButton.click();
       await page.waitForTimeout(3000);
+      
+      // Check for error messages after save
+      const errorMessage = await page.$('.ErrorMessage, [class*="error"], .Alert--error');
+      if (errorMessage) {
+        const errorText = await errorMessage.textContent();
+        console.log(`   ❌ Error: ${errorText}`);
+        // Capture error screenshot
+        await page.screenshot({ path: `.auth/bid_edit_error_${projectSlug}_${timestamp}.png`, fullPage: true });
+        return false;
+      }
+      
       console.log("   ✅ Bid updated successfully!");
       return true;
     }
