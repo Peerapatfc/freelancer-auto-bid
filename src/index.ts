@@ -1,9 +1,9 @@
 import "dotenv/config";
 import { browserManager } from "./browser.js";
-import { scrapeProjects, enrichProjectsWithDetails, getRemainingBids } from "./scraper.js";
+import { scrapeProjects, enrichProjectsWithDetails, getRemainingBids, getBidInsights, analyzeCompetition } from "./scraper.js";
 import { recommendProjects, filterByScore } from "./ai/recommender.js";
 import { generateProposal, generateTemplateProposal } from "./ai/proposal.js";
-import { submitBid } from "./bidder.js";
+import { submitBid, editBid } from "./bidder.js";
 import { profile, searchUrl } from "../config/profile.js";
 import type { BidData } from "./types.js";
 
@@ -14,6 +14,7 @@ const maxProjects = Number.parseInt(args.find((a) => a.startsWith("--max="))?.sp
 const headless = args.includes("--headless");
 const useTemplate = args.includes("--template"); // Use template instead of AI
 const skipDetails = args.includes("--skip-details"); // Skip fetching project details
+const improveBidsMode = args.includes("--improve-bids"); // Mode to edit poor-ranking bids
 
 async function main() {
   console.log("╔════════════════════════════════════════════════════════════╗");
@@ -49,7 +50,62 @@ async function main() {
       return;
     }
     
-    console.log(`\n✅ You have ${bidStatus.remaining} bids available\n`);
+    console.log(`\n✅ You have ${bidStatus.remaining} bids available`);
+
+    // Fetch current bid performance
+    const existingBids = await getBidInsights();
+    const competition = analyzeCompetition(existingBids);
+    
+    if (existingBids.length > 0) {
+      console.log(`📈 Bid Performance: ${competition.sealedCount} sealed, avg rank #${competition.avgRank}, avg competition ${competition.avgTotalBids} bids`);
+    }
+    console.log("");
+
+    // If --improve-bids mode, edit poor-ranking bids instead of placing new ones
+    if (improveBidsMode) {
+      console.log("🔧 IMPROVE BIDS MODE: Editing poor-ranking bids...\n");
+      
+      // Find bids with poor visibility (>50% position)
+      const poorBids = existingBids.filter(bid => {
+        if (bid.bidRank === 0 || bid.totalBids === 0) return false;
+        const positionPercent = (bid.bidRank / bid.totalBids) * 100;
+        return positionPercent > 50;
+      });
+
+      if (poorBids.length === 0) {
+        console.log("✅ No poor-ranking bids found. All bids have good visibility!");
+        return;
+      }
+
+      console.log(`Found ${poorBids.length} bids with poor visibility (>50%):\n`);
+
+      for (const bid of poorBids) {
+        const positionPercent = Math.round((bid.bidRank / bid.totalBids) * 100);
+        console.log(`📉 ${bid.projectTitle}`);
+        console.log(`   Position: #${bid.bidRank}/${bid.totalBids} (${positionPercent}%)`);
+        console.log(`   Current bid: ${bid.yourBid} ${bid.yourBidCurrency}`);
+        
+        // Calculate reduced bid (10% less)
+        const reducedBid = Math.round(bid.yourBid * 0.9);
+        console.log(`   Suggested new bid: ${reducedBid} ${bid.yourBidCurrency} (-10%)`);
+        
+        // Edit the bid
+        const success = await editBid(bid.projectUrl, reducedBid, undefined, dryRun);
+        
+        if (success) {
+          console.log(`   ✅ Bid updated!\n`);
+        } else {
+          console.log(`   ⚠️ Could not update bid\n`);
+        }
+        
+        // Delay between edits
+        await new Promise(r => setTimeout(r, 2000));
+      }
+
+      console.log("\n✨ Bid improvement complete!");
+      return;
+    }
+
 
     // Scrape projects from search page
     let projects = await scrapeProjects(searchUrl, maxProjects);

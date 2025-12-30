@@ -249,6 +249,102 @@ async function askConfirmation(question: string): Promise<boolean> {
 }
 
 /**
+ * Edit an existing bid to improve ranking
+ * - Can lower bid amount
+ * - Can update proposal text
+ */
+export async function editBid(
+  projectUrl: string,
+  newAmount?: number,
+  newProposal?: string,
+  dryRun = false
+): Promise<boolean> {
+  const page = browserManager.getPage();
+
+  console.log(`\n✏️  Editing bid for: ${projectUrl}`);
+
+  // Navigate to project page (proposals view)
+  await page.goto(projectUrl, { waitUntil: "networkidle", timeout: 60000 });
+  await page.waitForTimeout(3000);
+
+  try {
+    // Scroll to find the bid card (Your Proposal section)
+    await page.evaluate(() => {
+      const bidCard = document.querySelector('app-bid-card, .Actions-freelancer');
+      bidCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    await page.waitForTimeout(1000);
+
+    // Look for the Edit button using the actual Freelancer DOM selector
+    // fl-button[fltrackinglabel="EditBidButton"] contains button with text "Edit"
+    const editButton = await page.$('fl-button[fltrackinglabel="EditBidButton"] button');
+    
+    if (!editButton) {
+      // Fallback: try text-based selector
+      const fallbackButton = await page.$('button:has-text("Edit")');
+      if (!fallbackButton) {
+        console.log("   ⚠️ Edit button not found - may not have bid on this project");
+        return false;
+      }
+    }
+
+    if (dryRun) {
+      console.log("   🔄 [DRY RUN] Would click Edit button");
+      if (newAmount) console.log(`   🔄 [DRY RUN] Would change amount to: ${newAmount}`);
+      if (newProposal) console.log("   🔄 [DRY RUN] Would update proposal");
+      return true;
+    }
+
+    // Click the Edit button
+    const buttonToClick = await page.$('fl-button[fltrackinglabel="EditBidButton"] button') || 
+                          await page.$('button:has-text("Edit")');
+    if (buttonToClick) {
+      await buttonToClick.click();
+      console.log("   ✓ Clicked Edit button");
+    }
+    await page.waitForTimeout(2000);
+
+    // Update bid amount if provided
+    if (newAmount) {
+      const amountInput = await page.$('#bidAmountInput, input[type="number"]');
+      if (amountInput) {
+        await amountInput.click({ clickCount: 3 }); // Select all
+        await amountInput.fill(newAmount.toString());
+        console.log(`   ✓ Updated amount to: ${newAmount}`);
+      }
+    }
+
+    // Update proposal text if provided
+    if (newProposal) {
+      const descInput = await page.$('#descriptionTextArea, textarea');
+      if (descInput) {
+        await descInput.click();
+        await descInput.fill("");
+        await descInput.fill(newProposal);
+        console.log(`   ✓ Updated proposal (${newProposal.length} chars)`);
+      }
+    }
+
+    // Look for Save/Update button
+    const saveButton = await page.$('button:has-text("Save"), button:has-text("Update"), fl-button:has-text("Save")');
+    
+    if (saveButton) {
+      await saveButton.click();
+      await page.waitForTimeout(3000);
+      console.log("   ✅ Bid updated successfully!");
+      return true;
+    }
+    
+    console.log("   ⚠️ Could not find Save button");
+    return false;
+
+  } catch (error) {
+    console.error(`   ❌ Error editing bid: ${(error as Error).message}`);
+    return false;
+  }
+}
+
+/**
  * Get count of bids made today (for rate limiting)
  */
 export function getTodayBidCount(): number {

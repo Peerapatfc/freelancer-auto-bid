@@ -588,6 +588,214 @@ export async function getRemainingBids(): Promise<{
   return { ...bidInfo, replenishTime };
 }
 
+/**
+ * Bid insight data structure
+ */
+export interface BidInsight {
+  projectTitle: string;
+  projectUrl: string;
+  timeRemaining: string;
+  bidRank: number;
+  totalBids: number;
+  yourBid: number;
+  yourBidCurrency: string;
+  status: "active" | "sealed" | "won" | "lost";
+  clientCountry: string;
+  clientRating: number;
+}
+
+/**
+ * Scrape bid insights from /insights/bids page
+ * Shows your bid performance: rank, status, competition
+ */
+export async function getBidInsights(): Promise<BidInsight[]> {
+  const page = browserManager.getPage();
+  
+  console.log("\n📊 Fetching bid insights...");
+  
+  await page.goto("https://www.freelancer.com/insights/bids", { 
+    waitUntil: "networkidle", 
+    timeout: 60000 
+  });
+  await page.waitForTimeout(3000);
+
+  const insights = await page.evaluate(() => {
+    // Select only main bid rows, not expandable detail rows
+    const rows = document.querySelectorAll('.InsightsBidsTable table tbody tr.BodyRow:not(.BodyRowExpandable)');
+    const results: {
+      projectTitle: string;
+      projectUrl: string;
+      timeRemaining: string;
+      bidRank: number;
+      totalBids: number;
+      yourBid: number;
+      yourBidCurrency: string;
+      status: string;
+      clientCountry: string;
+      clientRating: number;
+    }[] = [];
+
+    for (const row of rows) {
+      try {
+        // Project title and link - inside app-project-title-column
+        const titleEl = row.querySelector('app-project-title-column fl-link a');
+        const projectTitle = titleEl?.textContent?.trim() || "";
+        const projectUrl = (titleEl as HTMLAnchorElement)?.href || "";
+
+        // Skip if no title (not a valid bid row)
+        if (!projectTitle) continue;
+
+        // Time to bid - 2nd column
+        const cells = row.querySelectorAll('td');
+        const timeRemaining = cells[1]?.textContent?.trim() || "";
+
+        // Bid rank - in .InsightsBidsTable-column-bidRank
+        const rankEl = row.querySelector('.InsightsBidsTable-column-bidRank');
+        const rankText = rankEl?.textContent?.trim() || "";
+        // Pattern: "#100+ of 179 bids" or "#26 of 33 bids"
+        const rankMatch = rankText.match(/#?(\d+)\+?\s*of\s*(\d+)/i);
+        const bidRank = rankMatch ? Number.parseInt(rankMatch[1], 10) : 0;
+        const totalBids = rankMatch ? Number.parseInt(rankMatch[2], 10) : 0;
+
+        // Your bid amount - 5th column contains the amount like "£30.00 GBP" or "₹850.00 INR"
+        const yourBidText = cells[4]?.textContent?.trim() || "";
+        // Match currency symbol + amount + currency code
+        const bidMatch = yourBidText.match(/([£$₹€])?([0-9,]+(?:\.[0-9]+)?)\s*([A-Z]{3})?/);
+        const yourBid = bidMatch ? Number.parseFloat(bidMatch[2].replace(/,/g, "")) : 0;
+        let yourBidCurrency = bidMatch?.[3] || "USD";
+        // Infer from symbol if no code
+        if (!bidMatch?.[3] && bidMatch?.[1]) {
+          const symbolMap: Record<string, string> = { "£": "GBP", "$": "USD", "₹": "INR", "€": "EUR" };
+          yourBidCurrency = symbolMap[bidMatch[1]] || "USD";
+        }
+
+        // Status - check for Sealed badge in winning bid column (4th column)
+        const sealedEl = row.querySelector('fl-upgrade-tag[data-upgrade-type="sealed"]');
+        const isSealed = !!sealedEl || cells[3]?.textContent?.toLowerCase().includes("sealed");
+        const status = isSealed ? "sealed" : "active";
+
+        // Client info - flag image src contains country code
+        const flagImg = row.querySelector('app-client-information-column fl-flag img') as HTMLImageElement;
+        const flagSrc = flagImg?.src || "";
+        // Extract country from URL like ".../flags/gb.png"
+        const countryMatch = flagSrc.match(/flags\/([a-z]{2})\.png/i);
+        const clientCountry = countryMatch ? countryMatch[1].toUpperCase() : "";
+        
+        // Client rating - from fl-rating ValueBlock
+        const ratingEl = row.querySelector('fl-rating .ValueBlock');
+        const clientRating = ratingEl ? Number.parseFloat(ratingEl.textContent?.trim() || "0") : 0;
+
+        results.push({
+          projectTitle,
+          projectUrl,
+          timeRemaining,
+          bidRank,
+          totalBids,
+          yourBid,
+          yourBidCurrency,
+          status,
+          clientCountry,
+          clientRating,
+        });
+      } catch (e) {
+        console.error("Error parsing bid row:", e);
+      }
+    }
+
+    return results;
+  });
+
+  // Display summary
+  if (insights.length > 0) {
+    console.log(`   Found ${insights.length} active bids:\n`);
+    
+    const sealed = insights.filter(i => i.status === "sealed");
+    
+    // Calculate position as percentage: lower % = better visibility
+    // #1 of 100 = 1% (top), #50 of 100 = 50% (middle), #100 of 100 = 100% (bottom)
+    const getPositionPercent = (rank: number, total: number) => 
+      total > 0 ? (rank / total) * 100 : 100;
+    
+    const goodPosition = insights.filter(i => {
+      if (i.bidRank === 0 || i.totalBids === 0) return false;
+      return getPositionPercent(i.bidRank, i.totalBids) <= 25; // Top 25%
+    });
+    
+    const okPosition = insights.filter(i => {
+      if (i.bidRank === 0 || i.totalBids === 0) return false;
+      const pct = getPositionPercent(i.bidRank, i.totalBids);
+      return pct > 25 && pct <= 50; // 25-50%
+    });
+    
+    const poorPosition = insights.filter(i => {
+      if (i.bidRank === 0 || i.totalBids === 0) return true; // Unknown = poor
+      return getPositionPercent(i.bidRank, i.totalBids) > 50; // Bottom 50%
+    });
+    
+    if (sealed.length > 0) {
+      console.log(`   🔒 ${sealed.length} SEALED projects (bids hidden from competitors):`);
+      for (const b of sealed) {
+        console.log(`      - ${b.projectTitle.substring(0, 40)}...`);
+      }
+    }
+    
+    if (goodPosition.length > 0) {
+      console.log(`   🎯 ${goodPosition.length} GOOD visibility (top 25%):`);
+      for (const b of goodPosition) {
+        const pct = Math.round(getPositionPercent(b.bidRank, b.totalBids));
+        console.log(`      - #${b.bidRank}/${b.totalBids} (${pct}%): ${b.projectTitle.substring(0, 30)}...`);
+      }
+    }
+    
+    if (okPosition.length > 0) {
+      console.log(`   📊 ${okPosition.length} OK visibility (25-50%):`);
+      for (const b of okPosition) {
+        const pct = Math.round(getPositionPercent(b.bidRank, b.totalBids));
+        console.log(`      - #${b.bidRank}/${b.totalBids} (${pct}%): ${b.projectTitle.substring(0, 30)}...`);
+      }
+    }
+    
+    if (poorPosition.length > 0) {
+      console.log(`   📉 ${poorPosition.length} POOR visibility (bottom 50%):`);
+      for (const b of poorPosition) {
+        const pct = b.totalBids > 0 ? Math.round(getPositionPercent(b.bidRank, b.totalBids)) : "?";
+        console.log(`      - #${b.bidRank || "?"}/${b.totalBids || "?"} (${pct}%): ${b.projectTitle.substring(0, 30)}...`);
+      }
+    }
+    
+    console.log("");
+  } else {
+    console.log("   No active bids found\n");
+  }
+
+  return insights as BidInsight[];
+}
+
+/**
+ * Calculate average winning position from insights
+ * Used to estimate if a new bid would be competitive
+ */
+export function analyzeCompetition(insights: BidInsight[]): {
+  avgRank: number;
+  sealedCount: number;
+  avgTotalBids: number;
+  winRate: number;
+} {
+  if (insights.length === 0) {
+    return { avgRank: 0, sealedCount: 0, avgTotalBids: 0, winRate: 0 };
+  }
+
+  const withRank = insights.filter(i => i.bidRank > 0);
+  const avgRank = withRank.length > 0 
+    ? withRank.reduce((sum, i) => sum + i.bidRank, 0) / withRank.length 
+    : 0;
+  
+  const sealedCount = insights.filter(i => i.status === "sealed").length;
+  const avgTotalBids = insights.reduce((sum, i) => sum + i.totalBids, 0) / insights.length;
+  const winRate = sealedCount / insights.length * 100;
+
+  return { avgRank: Math.round(avgRank), sealedCount, avgTotalBids: Math.round(avgTotalBids), winRate };
+}
+
 // Export for use in other modules
 export { convertToUSD, USD_EXCHANGE_RATES, parseCurrencyAmount };
-
