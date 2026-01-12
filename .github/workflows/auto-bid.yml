@@ -51,14 +51,16 @@ jobs:
       
       - name: Run auto-bid script
         run: |
-          # Determine dry-run mode
-          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
-          
-          if [ "$DRY_RUN" = "true" ]; then
-            echo "🏃 Running in DRY-RUN mode..."
+          # For scheduled runs: LIVE mode (actually submit bids)
+          # For manual runs: use the input value (defaults to dry-run)
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "🚀 SCHEDULED RUN - Running in LIVE mode..."
+            npm start -- --headless
+          elif [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "🏃 MANUAL RUN - Running in DRY-RUN mode..."
             npm start -- --dry-run --headless
           else
-            echo "🚀 Running in LIVE mode..."
+            echo "🚀 MANUAL RUN - Running in LIVE mode..."
             npm start -- --headless
           fi
         env:
